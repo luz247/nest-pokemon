@@ -10,6 +10,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Pokemon } from './entities/pokemon.entity';
 import { isValidObjectId, Model } from 'mongoose';
 import { isNumber } from 'class-validator';
+import { PaginationDto } from 'src/common/dto/pagination-pakemon.dto';
 
 @Injectable()
 export class PokemonService {
@@ -24,8 +25,12 @@ export class PokemonService {
     }
   }
 
-  findAll(): Promise<Pokemon[]> {
-    return this.pokemoModel.find({});
+  findAll(paginationDto:PaginationDto): Promise<Pokemon[]> {
+    const {limit=10, offset=0} = paginationDto
+    return this.pokemoModel.find({})
+                           .limit(limit)
+                           .skip(offset)
+                           .sort()
   }
 
   async findOne(term: string): Promise<Pokemon> {
@@ -64,7 +69,7 @@ export class PokemonService {
   }
 
  async remove(id: string){
- const {deletedCount} = await this.pokemoModel.deleteOne({_id:id})
+ const {deletedCount} = await this.pokemoModel.deleteMany({})
 
  if(deletedCount ===  0) throw new NotFoundException(`pokemo with id ${id} not found`)
   
