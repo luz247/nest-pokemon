@@ -11,26 +11,35 @@ import { Pokemon } from './entities/pokemon.entity';
 import { isValidObjectId, Model } from 'mongoose';
 import { isNumber } from 'class-validator';
 import { PaginationDto } from 'src/common/dto/pagination-pakemon.dto';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class PokemonService {
-  constructor(@InjectModel(Pokemon.name) private pokemoModel: Model<Pokemon>) {}
+  private defaultLimit: number;
+
+  constructor(
+    @InjectModel(Pokemon.name)
+    private readonly pokemoModel: Model<Pokemon>,
+    private readonly configService: ConfigService,
+  ) {
+    this.defaultLimit = configService.get<number>('defaultLimit', 10);
+  }
 
   async create(createPokemonDto: CreatePokemonDto) {
     try {
       const createPokemon = await this.pokemoModel.create(createPokemonDto);
       return createPokemon.save();
     } catch (error) {
-     this.handleExceptions(error)
+      this.handleExceptions(error);
     }
   }
 
-  findAll(paginationDto:PaginationDto): Promise<Pokemon[]> {
-    const {limit=10, offset=0} = paginationDto
-    return this.pokemoModel.find({})
-                           .limit(limit)
-                           .skip(offset)
-                           .sort()
+  findAll(paginationDto: PaginationDto): Promise<Pokemon[]> {
+    const {
+      limit = this.defaultLimit,
+      offset = 0,
+    } = paginationDto;
+    return this.pokemoModel.find({}).limit(Number(limit)).skip(offset).sort();
   }
 
   async findOne(term: string): Promise<Pokemon> {
@@ -64,17 +73,17 @@ export class PokemonService {
         return { ...pokemon.toJSON(), ...updatePokemonDto };
       }
     } catch (error) {
-      this.handleExceptions(error)
+      this.handleExceptions(error);
     }
   }
 
- async remove(id: string){
- const {deletedCount} = await this.pokemoModel.deleteMany({})
+  async remove(id: string) {
+    const { deletedCount } = await this.pokemoModel.deleteMany({});
 
- if(deletedCount ===  0) throw new NotFoundException(`pokemo with id ${id} not found`)
-  
+    if (deletedCount === 0)
+      throw new NotFoundException(`pokemo with id ${id} not found`);
 
-    return
+    return;
   }
 
   private handleExceptions(error: any) {
